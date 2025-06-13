@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Sukebei FC2-PPV Image Preview
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Hover over a link on sukebei.nyaa.si to see a preview image from fc2ppvdb.com. Middle click on that link opens fc2ppvdv page to a new tab.
 // @author       Nardcromance
 // @match        https://sukebei.nyaa.si/*
@@ -292,11 +292,15 @@
     let currentDataSource = null;
     let fc2DataSource = null
     let currentVideoId = null;
+    let currentMegnetLink = null;
     document.addEventListener('mouseover', async function (e) {
         if (e.target.tagName === 'A') {
             const linkText = e.target.textContent;
             const match = linkText.match(/(FC2-PPV-\d+)/);
-
+            const trElement = e.target.closest('tr');
+            const aElements = trElement?.querySelectorAll('a');
+            const megnetLink = [...aElements].find(a => a.href.startsWith('magnet:'));
+            currentMegnetLink = megnetLink?.href;
             if (match) {
                 const videoId = match[1];
                 if (fc2DataSource === null) {
@@ -314,12 +318,18 @@
         }
     });
 
-    document.addEventListener('pointerdown', async function (e) {
+    document.addEventListener('auxclick', async function (e) {
         // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
-        // 1 => middle button
-        if (e.button === 1 && currentDataSource) {
+        // 1 => middle buton
+        // When middle clicking while holding the Ctrl key, open the magnet link in a new tab
+        if (e.button === 1 && e.ctrlKey && currentMegnetLink) {
+            e.preventDefault();
+            window.location.href = currentMegnetLink;
+        //     window.open(currentMegnetLink);
+        } else if (e.button === 1 && currentDataSource) {
+            e.preventDefault();
             window.open(await currentDataSource.getLink(currentVideoId));
-        }
+        } 
     });
 
     document.addEventListener('mousemove', function (e) {
