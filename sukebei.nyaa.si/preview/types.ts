@@ -1,15 +1,17 @@
 import type { DataSource } from "./data-source/DataSource";
 
+export type DataSourceCacheEntityType = {
+  doc: Document | null;
+  imgUrl: string;
+  tags: string[];
+  url: string;
+  id: string;
+  request: Tampermonkey.AbortHandle<any> | null;
+  response: Tampermonkey.Response<string> | null;
+  fulfilled: boolean;
+};
 export type DataSourceCacheType = {
-  [videoId: string]: {
-    doc?: Document;
-    imgUrl?: string;
-    tags?: string[];
-    url?: string;
-    id?: string;
-    request: Tampermonkey.AbortHandle<any> | null;
-    response: Tampermonkey.Response<string> | null;
-  };
+  [videoId: string]: DataSourceCacheEntityType;
 };
 
 export type PointType = {
@@ -22,11 +24,10 @@ export type PointType = {
 // that can be instantiated and is a subclass of DataSource.
 export type DataSourceConstructor = new (...args: any[]) => DataSource;
 
-
 export type SearchPatternType = {
   name: string;
   pattern: RegExp;
   source: string;
-  dataSourceClass: DataSourceConstructor
+  dataSourceClass: DataSourceConstructor;
   dataSourceInstance: DataSource | null;
 };

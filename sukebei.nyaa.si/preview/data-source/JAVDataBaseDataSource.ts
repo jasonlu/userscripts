@@ -1,33 +1,30 @@
+import { DataSourceCacheEntityType } from "../types";
 import { DataSource } from "./DataSource";
 
-export class MissAvDataSource extends DataSource {
-  protected readonly VIDEO_ID_PLEACEHOLDER = "__VIDEO_ID__";
-
+export class JAVDataBaseDataSource extends DataSource {
   constructor() {
-    super("https://missav.ai/ja/__VIDEO_ID__", "video.player", "a[href]");
+    super(
+      "https://www.javdatabase.com/movies/__VIDEO_ID__/",
+      "#poster-container img",
+      "a[href]"
+    );
     this.cache = {};
   }
-
-  async loadData(videoId: string) {
-    const url = this.sourceUrl.replace(this.VIDEO_ID_PLEACEHOLDER, videoId);
-    return await this.loadRemoteData(url, videoId);
-  }
-
 
   getImgSrc(videoId: string): string {
     let imgSrc = this.cache[videoId]?.imgUrl;
     if (!imgSrc) {
       const doc = this.getDoc(videoId);
       const imgSelector = this.imgSelector;
-      const img = <HTMLVideoElement>doc.querySelector(imgSelector);
-      imgSrc = img.dataset.poster ?? "";
+      const img = <HTMLImageElement>doc.querySelector(imgSelector);
+      imgSrc = img.src ?? "";
 
       this.cache[videoId].imgUrl = imgSrc;
     }
     return imgSrc;
   }
 
-  getTagsString(videoId: string) {
+  getTagsString(videoId: string): string {
     let tags = this.cache[videoId]?.tags;
     if (!tags || tags.length === 0) {
       const doc = this.getDoc(videoId);
@@ -49,5 +46,10 @@ export class MissAvDataSource extends DataSource {
       this.cache[videoId].tags = tags;
     }
     return tags.join(", ");
+  }
+
+  async loadData(videoId: string) {
+    const url = this.sourceUrl.replace(this.VIDEO_ID_PLEACEHOLDER, videoId);
+    return await this.loadRemoteData(url, videoId);
   }
 }

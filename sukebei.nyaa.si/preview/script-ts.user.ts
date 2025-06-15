@@ -1,6 +1,8 @@
 
 import { DataSource } from "./data-source/DataSource";
 import { FC2PPVDataSource } from "./data-source/FC2PPVDataSource";
+import { JAVDataBaseDataSource } from "./data-source/JAVDataBaseDataSource";
+import { MissAvDataSource } from "./data-source/MissAVDataSource";
 import type { SearchPatternType } from "./types";
 
 let currentDataSource: DataSource | null = null;
@@ -8,12 +10,19 @@ let currentVideoId: string = "";
 let currentMegnetLink: string = "";
 const patterns: SearchPatternType[] = [
   {
-    name: "general",
-    pattern: /\ ([A-Z]{3,4}\-[0-9]{3,4})\ /,
-    source: "https://missav.ai/__VIDEO_ID__",
-    dataSourceClass: FC2PPVDataSource,
+    name: "jav-database",
+    pattern: /\s([A-Z]{2,}\-[0-9]{3,6})\s/,
+    source: "https://www.javdatabase.com/movies/__VIDEO_ID__",
+    dataSourceClass: JAVDataBaseDataSource,
     dataSourceInstance: null,
   },
+  // {
+  //   name: "general",
+  //   pattern: /\ ([A-Z]{3,4}\-[0-9]{3,4})\ /,
+  //   source: "https://missav.ai/__VIDEO_ID__",
+  //   dataSourceClass: MissAvDataSource,
+  //   dataSourceInstance: null,
+  // },
   {
     name: "fc2ppv",
     pattern: /\s(FC2-?PPV-?([0-9]{5,7}))\s/,
@@ -21,12 +30,24 @@ const patterns: SearchPatternType[] = [
     dataSourceClass: FC2PPVDataSource,
     dataSourceInstance: null,
   },
+  
 ];
 
 document.addEventListener("mouseover", async function (e: MouseEvent) {
   const target = e.target as HTMLElement;
-  if (target && target.tagName === "A") {
-    const linkText = target.textContent!;
+  if (target && target.tagName === "TD") {
+    const trElement = target.closest("tr");
+    if (!trElement) {
+      return;
+    }
+    const linkElements = trElement.querySelectorAll("a");
+    console.log(linkElements)
+    const linkElement = [...linkElements as unknown as HTMLAnchorElement[]].find((a) => a.href.indexOf("/view/") > -1);
+    if (!linkElement) {
+      return;
+    }
+
+    const linkText = linkElement.textContent!;
     const dataSource = patterns.find((pattern) => {
       if (pattern.pattern.test(linkText)) {
         return pattern.dataSourceClass;
@@ -34,7 +55,7 @@ document.addEventListener("mouseover", async function (e: MouseEvent) {
     });
 
     // const match = linkText.match(/(FC2-PPV-\d+)/);
-    const trElement = target.closest("tr");
+    
     const aElements = trElement?.querySelectorAll("a");
     const megnetLink = [...(aElements as unknown as HTMLAnchorElement[])].find(
       (a) => a.href.startsWith("magnet:")
@@ -48,11 +69,17 @@ document.addEventListener("mouseover", async function (e: MouseEvent) {
 
       if (dataSourceInstance === null) {
         dataSourceInstance = new dataSourceClass();
-      }
-      await dataSourceInstance.loadData(videoId);
+        dataSource.dataSourceInstance = dataSourceInstance;
+      } 
       currentVideoId = videoId;
+      try {
+        await dataSourceInstance.loadData(videoId);
+      } catch (error) {
+        console.error(`Failed to load data for video ID ${videoId}:`, error);
+      }
+      const trRect = trElement.getBoundingClientRect();
       dataSourceInstance.showPopover(videoId);
-      dataSourceInstance.setPopoverPosition({ x: e.clientX, y: e.clientY });
+      dataSourceInstance.setPopoverPosition({ x: trRect.left, y: trRect.top });
       currentDataSource = dataSourceInstance;
     } else {
       currentDataSource = null;
@@ -77,7 +104,7 @@ document.addEventListener("auxclick", async function (e) {
 
 document.addEventListener("mousemove", function (e) {
   // Position the div near the cursor
-  currentDataSource?.setPopoverPosition({ x: e.clientX, y: e.clientY });
+  // currentDataSource?.setPopoverPosition({ x: e.clientX, y: e.clientY });
 });
 
 document.addEventListener("mouseout", function (e) {

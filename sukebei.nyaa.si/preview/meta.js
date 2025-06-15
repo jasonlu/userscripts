@@ -7,4 +7,6 @@
 // @match        https://sukebei.nyaa.si/*
 // @grant        GM_xmlhttpRequest
 // @connect      fc2ppvdb.com
+// @connect      missav.ai
+// @connect      www.javdatabase.com
 // ==/UserScript==
